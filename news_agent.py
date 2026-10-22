@@ -1,68 +1,83 @@
-
+import re
 import urllib.request
 import xml.etree.ElementTree as ET
-import re
-from datetime import datetime
+
 from email.utils import parsedate_to_datetime
-from urllib.parse import quote
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-RSS_URL = "https://feeds.bbci.co.uk/news/world/rss.xml"
 
-IMPORTANT_KEYWORDS = [
-    "breaking", "major", "government", "election", "court",
-    "policy", "economy", "crisis", "war", "attack", "disaster",
-    "earthquake", "flood", "storm", "health", "disease",
-    "research", "discovery", "technology", "security",
-    "climate", "business", "science", "india", "urgent"
-]
+RSS_FEEDS = {
+    "India": [
+        ("BBC", "https://feeds.bbci.co.uk/news/world/asia/india/rss.xml"),
+        ("Google News", "https://news.google.com/rss/search?q=India+news&hl=en-IN&gl=IN&ceid=IN:en"),
+    ],
 
-CLICKBAIT_WORDS = [
-    "you won't believe", "shocking", "mind-blowing",
-    "must see", "unbelievable", "secret trick"
-]
+    "World": [
+        ("BBC", "https://feeds.bbci.co.uk/news/world/rss.xml"),
+        ("The Guardian", "https://www.theguardian.com/world/rss"),
+        ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
+    ],
+
+    "Business": [
+        ("BBC", "https://feeds.bbci.co.uk/news/business/rss.xml"),
+        ("The Guardian", "https://www.theguardian.com/business/rss"),
+        ("Google News", "https://news.google.com/rss/search?q=business+news&hl=en-IN&gl=IN&ceid=IN:en"),
+    ],
+
+    "Science": [
+        ("BBC", "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml"),
+        ("The Guardian", "https://www.theguardian.com/science/rss"),
+        ("Google News", "https://news.google.com/rss/search?q=science+news&hl=en-IN&gl=IN&ceid=IN:en"),
+    ],
+
+    "Technology": [
+        ("BBC", "https://feeds.bbci.co.uk/news/technology/rss.xml"),
+        ("The Guardian", "https://www.theguardian.com/technology/rss"),
+        ("Google News", "https://news.google.com/rss/search?q=technology+news&hl=en-IN&gl=IN&ceid=IN:en"),
+    ],
+
+    "Sports": [
+        ("BBC", "https://feeds.bbci.co.uk/sport/rss.xml"),
+        ("ESPN", "https://www.espn.com/espn/rss/news"),
+        ("Google News", "https://news.google.com/rss/search?q=sports+news&hl=en-IN&gl=IN&ceid=IN:en"),
+    ],
+}
 
 
 def clean_text(text):
-    """Remove HTML tags and extra whitespace."""
-    text = re.sub(r"<[^>]+>", " ", text or "")
+    text = re.sub(r"<[^>]*>", " ", text or "")
     return re.sub(r"\s+", " ", text).strip()
 
 
-def get_score(title, description):
-    """Give higher scores to potentially important stories."""
-    text = f"{title} {description}".lower()
-    score = 0
+def make_summary(description, title):
+    """Create a short excerpt-based summary without a paid API."""
+    text = clean_text(description)
 
-    for keyword in IMPORTANT_KEYWORDS:
-        if keyword in text:
-            score += 2
+    if not text or text.lower() == clean_text(title).lower():
+        return "Read the original article for the full story."
 
-    for phrase in CLICKBAIT_WORDS:
-        if phrase in title.lower():
-            score -= 5
+    if len(text) <= 350:
+        return text
 
-    if len(title.split()) < 4:
-        score -= 2
+    shortened = text[:350]
+    last_space = shortened.rfind(" ")
 
-    return score
+    if last_space > 200:
+        shortened = shortened[:last_space]
+
+    return shortened.rstrip(" .,;:") + "..."
 
 
-def fetch_news(category=None, query=None, limit=20):
-    """Fetch, filter, deduplicate, and rank news articles."""
+def fetch_feed(source, url, category):
     request = urllib.request.Request(
-        RSS_URL,
+        url,
         headers={"User-Agent": "DailyScope/1.0"}
     )
 
-    try:
-        with urllib.request.urlopen(request, timeout=10) as response:
-            root = ET.fromstring(response.read())
-    except Exception as error:
-        print(f"News fetch failed: {error}")
-        return []
+    with urllib.request.urlopen(request, timeout=12) as response:
+        root = ET.fromstring(response.read())
 
     articles = []
-    seen_titles = set()
 
     for item in root.findall(".//item"):
         title = clean_text(item.findtext("title", ""))
@@ -73,62 +88,86 @@ def fetch_news(category=None, query=None, limit=20):
         if not title or not link:
             continue
 
-        # Remove duplicate headlines.
-        normalized = re.sub(r"[^a-z0-9]", "", title.lower())
-        if normalized in seen_titles:
-            continue
-        seen_titles.add(normalized)
-
-        # Filter clickbait headlines.
-        if any(word in title.lower() for word in CLICKBAIT_WORDS):
-            continue
-
-        # Optional keyword search.
-        if query:
-            searchable = f"{title} {description}".lower()
-            if query.lower() not in searchable:
-                continue
-
-        # Assign a category using simple keyword matching.
-        text = f"{title} {description}".lower()
-
-        categories = {
-            "India": ["india", "indian", "delhi", "mumbai"],
-            "Technology": ["technology", "tech", "artificial intelligence", " AI "],
-            "Science": ["science", "research", "scientist", "discovery"],
-            "Business": ["business", "economy", "market", "company", "trade"],
-            "World": ["world", "international", "global", "government"]
-        }
-
-        article_category = "World"
-
-        for name, keywords in categories.items():
-            if any(word in text for word in keywords):
-                article_category = name
-                break
-
-        if category and category.lower() != article_category.lower():
-            continue
-
-        # Parse publication date.
         published = ""
+        timestamp = 0
+
         try:
-            published = parsedate_to_datetime(pub_date).strftime(
-                "%d %b %Y, %H:%M"
-            )
+            date = parsedate_to_datetime(pub_date)
+            timestamp = date.timestamp()
+            published = date.strftime("%d %b %Y, %H:%M UTC")
         except (ValueError, TypeError, OverflowError):
-            published = pub_date
+            pass
 
         articles.append({
             "title": title,
             "description": description,
             "link": link,
             "published": published,
-            "category": article_category,
-            "score": get_score(title, description)
+            "category": category,
+            "source": source,
+            "_timestamp": timestamp,
         })
 
-    # Show higher-priority stories first.
-    articles.sort(key=lambda article: article["score"], reverse=True)
+    return articles
 
-    return articles[:max(0, limit)]
+
+def fetch_news(category=None, query=None, limit=20):
+    categories = (
+        [category]
+        if category in RSS_FEEDS
+        else list(RSS_FEEDS.keys())
+    )
+
+    articles = []
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        jobs = [
+            executor.submit(fetch_feed, source, url, cat)
+            for cat in categories
+            for source, url in RSS_FEEDS[cat]
+        ]
+
+        for job in as_completed(jobs):
+            try:
+                articles.extend(job.result())
+            except Exception as error:
+                print(f"News feed unavailable: {error}")
+
+    if query:
+        term = query.strip().lower()
+        articles = [
+            article for article in articles
+            if term in (
+                article["title"] + " " + article["description"]
+            ).lower()
+        ]
+
+    seen = set()
+    unique_articles = []
+
+    for article in articles:
+        key = re.sub(
+            r"[^a-z0-9]",
+            "",
+            article["title"].lower()
+        )
+
+        if key not in seen:
+            seen.add(key)
+            unique_articles.append(article)
+
+    unique_articles.sort(
+        key=lambda article: article["_timestamp"],
+        reverse=True
+    )
+
+    result = unique_articles[:max(0, limit)]
+
+    for article in result:
+        article["summary"] = make_summary(
+            article["description"],
+            article["title"]
+        )
+        article.pop("_timestamp", None)
+
+    return result
