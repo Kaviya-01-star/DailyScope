@@ -1,4 +1,5 @@
 import re
+import html
 import urllib.request
 import xml.etree.ElementTree as ET
 
@@ -8,34 +9,26 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 RSS_FEEDS = {
     "India": [
-        ("BBC", "https://feeds.bbci.co.uk/news/world/asia/india/rss.xml"),
         ("Google News", "https://news.google.com/rss/search?q=India+news&hl=en-IN&gl=IN&ceid=IN:en"),
+        ("BBC", "https://feeds.bbci.co.uk/news/world/asia/india/rss.xml"),
     ],
-
     "World": [
         ("BBC", "https://feeds.bbci.co.uk/news/world/rss.xml"),
-        ("The Guardian", "https://www.theguardian.com/world/rss"),
         ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
+        ("Google News", "https://news.google.com/rss/search?q=world+news&hl=en-IN&gl=IN&ceid=IN:en"),
     ],
-
     "Business": [
         ("BBC", "https://feeds.bbci.co.uk/news/business/rss.xml"),
-        ("The Guardian", "https://www.theguardian.com/business/rss"),
         ("Google News", "https://news.google.com/rss/search?q=business+news&hl=en-IN&gl=IN&ceid=IN:en"),
     ],
-
     "Science": [
         ("BBC", "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml"),
-        ("The Guardian", "https://www.theguardian.com/science/rss"),
         ("Google News", "https://news.google.com/rss/search?q=science+news&hl=en-IN&gl=IN&ceid=IN:en"),
     ],
-
     "Technology": [
         ("BBC", "https://feeds.bbci.co.uk/news/technology/rss.xml"),
-        ("The Guardian", "https://www.theguardian.com/technology/rss"),
         ("Google News", "https://news.google.com/rss/search?q=technology+news&hl=en-IN&gl=IN&ceid=IN:en"),
     ],
-
     "Sports": [
         ("BBC", "https://feeds.bbci.co.uk/sport/rss.xml"),
         ("ESPN", "https://www.espn.com/espn/rss/news"),
@@ -44,25 +37,26 @@ RSS_FEEDS = {
 }
 
 
-def clean_text(text):
-    text = re.sub(r"<[^>]*>", " ", text or "")
-    return re.sub(r"\s+", " ", text).strip()
+def clean_text(value):
+    value = html.unescape(value or "")
+    value = re.sub(r"<[^>]+>", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
 
 
 def make_summary(description, title):
-    """Create a short excerpt-based summary without a paid API."""
+    """Free excerpt-based summary; no paid AI service."""
     text = clean_text(description)
 
-    if not text or text.lower() == clean_text(title).lower():
-        return "Read the original article for the full story."
+    if not text or text.lower() == title.lower():
+        return "Read the original article for the complete story."
 
-    if len(text) <= 350:
+    if len(text) <= 280:
         return text
 
-    shortened = text[:350]
+    shortened = text[:280]
     last_space = shortened.rfind(" ")
 
-    if last_space > 200:
+    if last_space > 180:
         shortened = shortened[:last_space]
 
     return shortened.rstrip(" .,;:") + "..."
@@ -81,7 +75,9 @@ def fetch_feed(source, url, category):
 
     for item in root.findall(".//item"):
         title = clean_text(item.findtext("title", ""))
-        description = clean_text(item.findtext("description", ""))
+        description = clean_text(
+            item.findtext("description", "")
+        )
         link = item.findtext("link", "").strip()
         pub_date = item.findtext("pubDate", "").strip()
 
@@ -101,6 +97,7 @@ def fetch_feed(source, url, category):
         articles.append({
             "title": title,
             "description": description,
+            "summary": make_summary(description, title),
             "link": link,
             "published": published,
             "category": category,
@@ -111,12 +108,11 @@ def fetch_feed(source, url, category):
     return articles
 
 
-def fetch_news(category=None, query=None, limit=20):
-    categories = (
-        [category]
-        if category in RSS_FEEDS
-        else list(RSS_FEEDS.keys())
-    )
+def fetch_news(category=None, query=None, limit=24):
+    if category in RSS_FEEDS:
+        categories = [category]
+    else:
+        categories = list(RSS_FEEDS.keys())
 
     articles = []
 
@@ -131,10 +127,10 @@ def fetch_news(category=None, query=None, limit=20):
             try:
                 articles.extend(job.result())
             except Exception as error:
-                print(f"News feed unavailable: {error}")
+                print(f"Feed unavailable: {error}")
 
     if query:
-        term = query.strip().lower()
+        term = query.lower()
         articles = [
             article for article in articles
             if term in (
@@ -142,8 +138,8 @@ def fetch_news(category=None, query=None, limit=20):
             ).lower()
         ]
 
-    seen = set()
     unique_articles = []
+    seen = set()
 
     for article in articles:
         key = re.sub(
@@ -152,7 +148,7 @@ def fetch_news(category=None, query=None, limit=20):
             article["title"].lower()
         )
 
-        if key not in seen:
+        if key and key not in seen:
             seen.add(key)
             unique_articles.append(article)
 
@@ -164,10 +160,6 @@ def fetch_news(category=None, query=None, limit=20):
     result = unique_articles[:max(0, limit)]
 
     for article in result:
-        article["summary"] = make_summary(
-            article["description"],
-            article["title"]
-        )
         article.pop("_timestamp", None)
 
     return result

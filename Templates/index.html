@@ -3,55 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DailyScope | News Dashboard</title>
+
+    <title>DailyScope | Daily News</title>
 
     <style>
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
         }
 
         body {
+            margin: 0;
             font-family: Arial, sans-serif;
-            background: #f4f6fb;
+            background: #f1f3f8;
             color: #202438;
-            line-height: 1.6;
         }
 
         header {
             background: #172554;
             color: white;
-            padding: 28px 6%;
+            padding: 25px 5%;
         }
 
         header h1 {
+            margin: 0;
             font-size: 32px;
-            margin-bottom: 5px;
         }
 
         header p {
+            margin-bottom: 0;
             color: #dbeafe;
         }
 
         main {
-            max-width: 1200px;
-            margin: 30px auto;
+            max-width: 1400px;
+            margin: 25px auto;
             padding: 0 20px;
         }
 
-        .search-panel {
+        .toolbar {
             background: white;
-            padding: 20px;
+            padding: 18px;
             border-radius: 12px;
-            box-shadow: 0 4px 15px #0000000d;
             margin-bottom: 25px;
+            box-shadow: 0 3px 12px #0000000b;
         }
 
         .search-form {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 10px;
         }
 
         input, select, button {
@@ -67,14 +67,14 @@
         }
 
         select {
-            min-width: 150px;
             background: white;
+            min-width: 150px;
         }
 
         button {
+            border: none;
             background: #2563eb;
             color: white;
-            border: none;
             cursor: pointer;
             font-weight: bold;
         }
@@ -83,48 +83,54 @@
             background: #1d4ed8;
         }
 
-        .clear-link {
+        .clear {
             display: inline-block;
             margin-top: 12px;
             color: #2563eb;
             text-decoration: none;
         }
 
-        .section-heading {
-            margin-bottom: 18px;
-            font-size: 23px;
+        .section-title {
+            margin: 0 0 20px;
+            font-size: 24px;
         }
 
         .news-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(
+                auto-fill,
+                minmax(240px, 1fr)
+            );
             gap: 20px;
         }
 
-        .article {
+        .news-card {
+            aspect-ratio: 1 / 1;
+            min-width: 0;
             background: white;
             border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 15px #0000000d;
+            padding: 18px;
             display: flex;
             flex-direction: column;
-            overflow-wrap: anywhere;
+            overflow: hidden;
+            box-shadow: 0 4px 15px #0000000d;
+            border: 1px solid #e5e7eb;
         }
 
         .tags {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 12px;
+            gap: 6px;
+            margin-bottom: 10px;
         }
 
         .tag {
             display: inline-block;
             background: #e0e7ff;
             color: #1e40af;
-            padding: 4px 9px;
             border-radius: 20px;
-            font-size: 12px;
+            padding: 4px 8px;
+            font-size: 11px;
             font-weight: bold;
         }
 
@@ -133,73 +139,109 @@
             color: #374151;
         }
 
-        .article h3 {
-            font-size: 19px;
+        .news-card h2 {
+            font-size: 17px;
             line-height: 1.4;
-            margin-bottom: 12px;
+            margin: 0 0 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
-        .summary-title {
-            color: #1d4ed8;
+        .summary-label {
+            color: #2563eb;
+            font-size: 13px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .summary {
-            color: #4b5563;
-            margin-bottom: 15px;
-        }
-
-        .meta {
-            color: #6b7280;
             font-size: 13px;
+            color: #4b5563;
+            line-height: 1.5;
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .published {
+            font-size: 11px;
+            color: #6b7280;
             margin-top: auto;
-            padding-top: 12px;
+            padding-top: 10px;
         }
 
-        .read-link {
+        .read-more {
             display: inline-block;
-            margin-top: 15px;
             color: #2563eb;
-            text-decoration: none;
             font-weight: bold;
+            font-size: 13px;
+            text-decoration: none;
+            margin-top: 8px;
         }
 
-        .read-link:hover {
+        .read-more:hover {
             text-decoration: underline;
         }
 
         .empty {
             background: white;
-            border-radius: 12px;
             padding: 30px;
             text-align: center;
-            color: #6b7280;
+            border-radius: 12px;
         }
 
         footer {
             text-align: center;
             padding: 25px 15px;
-            margin-top: 40px;
             color: #6b7280;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         @media (max-width: 600px) {
             header h1 {
-                font-size: 26px;
+                font-size: 27px;
             }
 
             main {
-                margin-top: 20px;
                 padding: 0 12px;
+            }
+
+            .news-grid {
+                grid-template-columns: repeat(
+                    auto-fill,
+                    minmax(155px, 1fr)
+                );
+                gap: 12px;
+            }
+
+            .news-card {
+                padding: 12px;
+            }
+
+            .news-card h2 {
+                font-size: 15px;
+            }
+
+            .summary {
+                font-size: 12px;
+                -webkit-line-clamp: 4;
+            }
+
+            .tag {
+                font-size: 10px;
             }
 
             .search-form {
                 flex-direction: column;
             }
 
-            input, select, button {
+            .search-form input,
+            .search-form select,
+            .search-form button {
                 width: 100%;
             }
         }
@@ -210,55 +252,42 @@
 
 <header>
     <h1>DailyScope</h1>
-    <p>Your daily view of news from multiple sources, with AI-generated summaries.</p>
+    <p>Your daily news, organized in one place.</p>
 </header>
 
 <main>
-    <section class="search-panel">
+    <section class="toolbar">
         <form class="search-form" action="/" method="GET">
             <input
                 type="search"
                 name="q"
-                placeholder="Search news..."
+                placeholder="Search for news..."
                 value="{{ query }}"
-                aria-label="Search news"
             >
 
-            <select name="category" aria-label="Choose news category">
+            <select name="category">
                 <option value="">All Categories</option>
-                <option value="India"
-                    {% if category == "India" %}selected{% endif %}>
-                    India
-                </option>
-                <option value="World"
-                    {% if category == "World" %}selected{% endif %}>
-                    World
-                </option>
-                <option value="Business"
-                    {% if category == "Business" %}selected{% endif %}>
-                    Business
-                </option>
-                <option value="Science"
-                    {% if category == "Science" %}selected{% endif %}>
-                    Science
-                </option>
-                <option value="Technology"
-                    {% if category == "Technology" %}selected{% endif %}>
-                    Technology
-                </option>
-                <option value="Sports"
-                    {% if category == "Sports" %}selected{% endif %}>
-                    Sports
-                </option>
+
+                {% for name in [
+                    "India", "World", "Business",
+                    "Science", "Technology", "Sports"
+                ] %}
+                    <option
+                        value="{{ name }}"
+                        {% if category == name %}selected{% endif %}
+                    >
+                        {{ name }}
+                    </option>
+                {% endfor %}
             </select>
 
-            <button type="submit">Search News</button>
+            <button type="submit">Search</button>
         </form>
 
-        <a class="clear-link" href="/">Show all news</a>
+        <a class="clear" href="/">Show all news</a>
     </section>
 
-    <h2 class="section-heading">
+    <h2 class="section-title">
         {% if category %}
             {{ category }} News
         {% elif query %}
@@ -271,51 +300,59 @@
     {% if articles %}
         <section class="news-grid">
             {% for article in articles %}
-                <article class="article">
+                <article class="news-card">
+
                     <div class="tags">
-                        <span class="tag">{{ article.category }}</span>
-                        <span class="tag source-tag">{{ article.source }}</span>
+                        <span class="tag">
+                            {{ article.category }}
+                        </span>
+
+                        <span class="tag source-tag">
+                            {{ article.source }}
+                        </span>
                     </div>
 
-                    <h3>{{ article.title }}</h3>
+                    <h2>{{ article.title }}</h2>
 
-                    <p class="summary-title">AI Summary</p>
+                    <div class="summary-label">
+                        News Summary
+                    </div>
 
                     <p class="summary">
-                        {{ article.summary or article.description or
-                           "Open the original article for more details." }}
+                        {{ article.summary }}
                     </p>
 
-                    <p class="meta">
+                    <p class="published">
                         {% if article.published %}
-                            Published: {{ article.published }}
+                            {{ article.published }}
                         {% else %}
                             Publication time unavailable
                         {% endif %}
                     </p>
 
                     <a
-                        class="read-link"
+                        class="read-more"
                         href="{{ article.link }}"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
-                        Read original article →
+                        Read full story →
                     </a>
+
                 </article>
             {% endfor %}
         </section>
     {% else %}
         <div class="empty">
-            <h3>No news found</h3>
-            <p>Try another search term or select a different category.</p>
+            <h3>No news available</h3>
+            <p>Try another category or search term.</p>
         </div>
     {% endif %}
 </main>
 
 <footer>
-    <p>DailyScope — News summaries for informational purposes.</p>
-    <p>News belongs to its respective publishers. Visit the original source for full coverage.</p>
+    DailyScope · Headlines and excerpts from news feeds.
+    Visit the original publisher for full coverage.
 </footer>
 
 </body>
