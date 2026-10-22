@@ -1,48 +1,22 @@
 
-from flask import Flask, render_template
-import urllib.request
-import xml.etree.ElementTree as ET
+from flask import Flask, render_template, request
+from news_agent import fetch_news
 
-app = Flask(__name__)
-
-FEED_URL = "https://feeds.bbci.co.uk/news/world/rss.xml"
-
-
-def get_news():
-    request = urllib.request.Request(
-        FEED_URL,
-        headers={"User-Agent": "Mozilla/5.0"}
-    )
-
-    with urllib.request.urlopen(request, timeout=15) as response:
-        root = ET.fromstring(response.read())
-
-    articles = []
-
-    for item in root.findall(".//item")[:20]:
-        articles.append({
-            "title": item.findtext("title", "Untitled"),
-            "link": item.findtext("link", "#"),
-            "description": item.findtext("description", "")
-        })
-
-    return articles
+app = Flask(__name__, template_folder="Templates")
 
 
 @app.route("/")
 def home():
-    error = None
+    category = request.args.get("category", "").strip() or None
+    query = request.args.get("q", "").strip() or None
 
-    try:
-        articles = get_news()
-    except Exception:
-        articles = []
-        error = "Could not load news. Please refresh and try again."
+    articles = fetch_news(category=category, query=query, limit=20)
 
     return render_template(
         "index.html",
         articles=articles,
-        error=error
+        category=category or "",
+        query=query or ""
     )
 
 

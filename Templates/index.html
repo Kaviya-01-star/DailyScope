@@ -4,136 +4,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DailyScope | World News</title>
+    <title>DailyScope - Important News Only</title>
 
     <style>
         body {
-            margin: 0;
             font-family: Arial, sans-serif;
-            background: #f3f5f9;
-            color: #182238;
-        }
-
-        header {
-            background: #14213d;
-            color: white;
-            padding: 28px 7%;
-        }
-
-        header h1 {
             margin: 0;
-            font-size: 32px;
+            padding: 30px;
+            background: #f1f5f9;
+            color: #1e293b;
         }
 
-        header p { color: #cbd5e1; }
-
-        main {
-            max-width: 1000px;
-            margin: 30px auto;
-            padding: 0 18px;
+        .container {
+            max-width: 950px;
+            margin: auto;
         }
 
-        .top {
+        h1 { color: #2563eb; }
+
+        form {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
+            gap: 10px;
             flex-wrap: wrap;
+            margin: 25px 0;
         }
 
-        .refresh {
+        input, select, button {
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        button {
             background: #2563eb;
             color: white;
-            padding: 11px 16px;
-            border-radius: 8px;
-            text-decoration: none;
+            cursor: pointer;
         }
 
-        .news-grid {
-            display: grid;
-            grid-template-columns: repeat(
-                auto-fit, minmax(260px, 1fr)
-            );
-            gap: 18px;
-            margin-top: 22px;
-        }
-
-        .card {
+        .article {
             background: white;
             padding: 22px;
-            border-radius: 14px;
-            box-shadow: 0 3px 14px #18223810;
+            margin-bottom: 18px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px #0000000d;
+            border-left: 4px solid #2563eb;
         }
 
-        .tag {
-            color: #2563eb;
-            font-size: 12px;
-            font-weight: bold;
-        }
+        .article h3 { line-height: 1.5; }
 
-        .card h3 { line-height: 1.5; }
-
-        .card p {
-            color: #64748b;
-            line-height: 1.6;
-        }
-
-        .card a {
-            color: #2563eb;
+        .article a {
+            color: #1e40af;
             text-decoration: none;
-            font-weight: bold;
         }
 
-        footer {
-            text-align: center;
-            padding: 25px;
+        .article a:hover { text-decoration: underline; }
+
+        .meta {
             color: #64748b;
+            font-size: 13px;
+        }
+
+        .empty {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
         }
     </style>
 </head>
 
 <body>
-    <header>
-        <h1>DailyScope 📰</h1>
-        <p>Your world, explained one headline at a time.</p>
-    </header>
+<div class="container">
+    <h1>DailyScope</h1>
+    <p>Less noise. Only news that matters.</p>
 
-    <main>
-        <div class="top">
-            <div>
-                <h2>Latest World News</h2>
-                <p>Headlines collected from BBC News RSS.</p>
-            </div>
+    <form method="GET" action="/">
+        <input
+            type="text"
+            name="q"
+            placeholder="Search news..."
+            value="{{ query }}"
+        >
 
-            <a class="refresh" href="/">↻ Refresh News</a>
-        </div>
+        <select name="category">
+            <option value="">All categories</option>
+            <option value="India" {% if category == 'India' %}selected{% endif %}>India</option>
+            <option value="World" {% if category == 'World' %}selected{% endif %}>World</option>
+            <option value="Technology" {% if category == 'Technology' %}selected{% endif %}>Technology</option>
+            <option value="Science" {% if category == 'Science' %}selected{% endif %}>Science</option>
+            <option value="Business" {% if category == 'Business' %}selected{% endif %}>Business</option>
+        </select>
 
-        {% if error %}
-            <p>{{ error }}</p>
-        {% endif %}
+        <button type="submit">Search</button>
+    </form>
 
-        <div class="news-grid">
-            {% for article in articles %}
-                <article class="card">
-                    <span class="tag">WORLD NEWS</span>
-                    <h3>{{ article.title }}</h3>
-                    <p>{{ article.description | striptags }}</p>
-                    <a href="{{ article.link }}"
-                       target="_blank"
-                       rel="noopener noreferrer">
-                        Read original story →
-                    </a>
-                </article>
-            {% else %}
-                {% if not error %}
-                    <p>No news articles found.</p>
+    <h2>Important News</h2>
+
+    {% if articles %}
+        {% for article in articles %}
+        <div class="article">
+            <h3>
+                <a href="{{ article.link }}" target="_blank"
+                   rel="noopener noreferrer">
+                    {{ article.title }}
+                </a>
+            </h3>
+
+            <p>{{ article.description }}</p>
+
+            <p class="meta">
+                {{ article.category }}
+                {% if article.published %}
+                    · {{ article.published }}
                 {% endif %}
-            {% endfor %}
+            </p>
         </div>
-    </main>
-
-    <footer>
-        DailyScope · News links lead to their original publishers.
-    </footer>
+        {% endfor %}
+    {% else %}
+        <div class="empty">
+            <p>No news available. Check your internet connection or try another search.</p>
+        </div>
+    {% endif %}
+</div>
 </body>
 </html>
