@@ -1,130 +1,322 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DailyScope - Important News Only</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyScope | News Dashboard</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 30px;
-            background: #f1f5f9;
-            color: #1e293b;
+            background: #f4f6fb;
+            color: #202438;
+            line-height: 1.6;
         }
 
-        .container {
-            max-width: 950px;
-            margin: auto;
+        header {
+            background: #172554;
+            color: white;
+            padding: 28px 6%;
         }
 
-        h1 { color: #2563eb; }
+        header h1 {
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
 
-        form {
+        header p {
+            color: #dbeafe;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .search-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px #0000000d;
+            margin-bottom: 25px;
+        }
+
+        .search-form {
             display: flex;
-            gap: 10px;
             flex-wrap: wrap;
-            margin: 25px 0;
+            gap: 12px;
         }
 
         input, select, button {
             padding: 12px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #d1d5db;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 15px;
+        }
+
+        input {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        select {
+            min-width: 150px;
+            background: white;
         }
 
         button {
             background: #2563eb;
             color: white;
+            border: none;
             cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .clear-link {
+            display: inline-block;
+            margin-top: 12px;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .section-heading {
+            margin-bottom: 18px;
+            font-size: 23px;
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
         }
 
         .article {
             background: white;
-            padding: 22px;
-            margin-bottom: 18px;
             border-radius: 12px;
-            box-shadow: 0 4px 12px #0000000d;
-            border-left: 4px solid #2563eb;
+            padding: 20px;
+            box-shadow: 0 4px 15px #0000000d;
+            display: flex;
+            flex-direction: column;
+            overflow-wrap: anywhere;
         }
 
-        .article h3 { line-height: 1.5; }
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
 
-        .article a {
+        .tag {
+            display: inline-block;
+            background: #e0e7ff;
             color: #1e40af;
-            text-decoration: none;
+            padding: 4px 9px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
         }
 
-        .article a:hover { text-decoration: underline; }
+        .source-tag {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .article h3 {
+            font-size: 19px;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .summary-title {
+            color: #1d4ed8;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .summary {
+            color: #4b5563;
+            margin-bottom: 15px;
+        }
 
         .meta {
-            color: #64748b;
+            color: #6b7280;
             font-size: 13px;
+            margin-top: auto;
+            padding-top: 12px;
+        }
+
+        .read-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .read-link:hover {
+            text-decoration: underline;
         }
 
         .empty {
             background: white;
-            padding: 20px;
-            border-radius: 10px;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            color: #6b7280;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px 15px;
+            margin-top: 40px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 26px;
+            }
+
+            main {
+                margin-top: 20px;
+                padding: 0 12px;
+            }
+
+            .search-form {
+                flex-direction: column;
+            }
+
+            input, select, button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 
 <body>
-<div class="container">
+
+<header>
     <h1>DailyScope</h1>
-    <p>Less noise. Only news that matters.</p>
+    <p>Your daily view of news from multiple sources, with AI-generated summaries.</p>
+</header>
 
-    <form method="GET" action="/">
-        <input
-            type="text"
-            name="q"
-            placeholder="Search news..."
-            value="{{ query }}"
-        >
+<main>
+    <section class="search-panel">
+        <form class="search-form" action="/" method="GET">
+            <input
+                type="search"
+                name="q"
+                placeholder="Search news..."
+                value="{{ query }}"
+                aria-label="Search news"
+            >
 
-        <select name="category">
-            <option value="">All categories</option>
-            <option value="India" {% if category == 'India' %}selected{% endif %}>India</option>
-            <option value="World" {% if category == 'World' %}selected{% endif %}>World</option>
-            <option value="Technology" {% if category == 'Technology' %}selected{% endif %}>Technology</option>
-            <option value="Science" {% if category == 'Science' %}selected{% endif %}>Science</option>
-            <option value="Business" {% if category == 'Business' %}selected{% endif %}>Business</option>
-        </select>
+            <select name="category" aria-label="Choose news category">
+                <option value="">All Categories</option>
+                <option value="India"
+                    {% if category == "India" %}selected{% endif %}>
+                    India
+                </option>
+                <option value="World"
+                    {% if category == "World" %}selected{% endif %}>
+                    World
+                </option>
+                <option value="Business"
+                    {% if category == "Business" %}selected{% endif %}>
+                    Business
+                </option>
+                <option value="Science"
+                    {% if category == "Science" %}selected{% endif %}>
+                    Science
+                </option>
+                <option value="Technology"
+                    {% if category == "Technology" %}selected{% endif %}>
+                    Technology
+                </option>
+                <option value="Sports"
+                    {% if category == "Sports" %}selected{% endif %}>
+                    Sports
+                </option>
+            </select>
 
-        <button type="submit">Search</button>
-    </form>
+            <button type="submit">Search News</button>
+        </form>
 
-    <h2>Important News</h2>
+        <a class="clear-link" href="/">Show all news</a>
+    </section>
+
+    <h2 class="section-heading">
+        {% if category %}
+            {{ category }} News
+        {% elif query %}
+            Search Results
+        {% else %}
+            Latest News
+        {% endif %}
+    </h2>
 
     {% if articles %}
-        {% for article in articles %}
-        <div class="article">
-            <h3>
-                <a href="{{ article.link }}" target="_blank"
-                   rel="noopener noreferrer">
-                    {{ article.title }}
-                </a>
-            </h3>
+        <section class="news-grid">
+            {% for article in articles %}
+                <article class="article">
+                    <div class="tags">
+                        <span class="tag">{{ article.category }}</span>
+                        <span class="tag source-tag">{{ article.source }}</span>
+                    </div>
 
-            <p>{{ article.description }}</p>
+                    <h3>{{ article.title }}</h3>
 
-            <p class="meta">
-                {{ article.category }}
-                {% if article.published %}
-                    · {{ article.published }}
-                {% endif %}
-            </p>
-        </div>
-        {% endfor %}
+                    <p class="summary-title">AI Summary</p>
+
+                    <p class="summary">
+                        {{ article.summary or article.description or
+                           "Open the original article for more details." }}
+                    </p>
+
+                    <p class="meta">
+                        {% if article.published %}
+                            Published: {{ article.published }}
+                        {% else %}
+                            Publication time unavailable
+                        {% endif %}
+                    </p>
+
+                    <a
+                        class="read-link"
+                        href="{{ article.link }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Read original article →
+                    </a>
+                </article>
+            {% endfor %}
+        </section>
     {% else %}
         <div class="empty">
-            <p>No news available. Check your internet connection or try another search.</p>
+            <h3>No news found</h3>
+            <p>Try another search term or select a different category.</p>
         </div>
     {% endif %}
-</div>
+</main>
+
+<footer>
+    <p>DailyScope — News summaries for informational purposes.</p>
+    <p>News belongs to its respective publishers. Visit the original source for full coverage.</p>
+</footer>
+
 </body>
 </html>
